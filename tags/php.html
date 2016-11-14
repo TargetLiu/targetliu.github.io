@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>php - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="TargetLiu - 吃土的码农"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post-tag" data-perma="post-tag-php">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-list">
+            <h2 class="tag text-center">php</h2>
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">22</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/22/lumen-artisan-console.html">Lumen中注册使用Artisan Console</a>
+                            </h3>
+                        </header>
+                        <section class="brief"><p>Laravel中使用 <code>Artisan Console</code> 有详细的介绍。<a href="https://laravel.com/docs/5.2/artisan">Laravel Artisan Console 官方文档</a>，除了创建和注册 <code>Artisan Console</code> 与Lumen稍许不同外，其它内容基本都一样。</p>
+
+<p>但是实际项目中，我更希望用Lumen的 <code>Artisan Console</code> 来执行一些简单的数据迁移、版本升级等操作。</p>
+
+<p>下面就以<a href="https://laravel.com/docs/5.2/artisan">官方文档</a>中的示例来简单说一下Lumen中怎么注册使用 <code>Artisan Console</code></p>
+</section>
+                        <aside class="aside clearfix">
+                            <a class="btn btn-primary btn-lg pull-right" href="/2016/7/22/lumen-artisan-console.html">继续阅读</a>
+                        </aside>
+                    </div>
+                </div>
+            </article>
+            
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">19</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/19/lumen-phpredis.html">Lumen中使用速度更快的PhpRedis扩展（更新队列驱动）</a>
+                            </h3>
+                        </header>
+                        <section class="brief"><blockquote>
+<p>Lumen的确是一款适合做API，速度很快的框架。但是在项目中使用Redis时发现Lumen默认使用的 <code>predis/predis</code> 会拖慢整体速度，特别是在高并发的情况下，所以寻思着使用 <code>PhpRedis</code> 代替，毕竟 <code>PhpRedis</code> 是C语言写的模块，性能上肯定优于 <code>predis</code></p>
+</blockquote>
+
+<p>文中例子已经整理成一个 <code>composer</code> 包，文末有简单介绍。</p>
+
+<h2 id="phpredis-for-lumen-5">PhpRedis for Lumen 5.*</h2>
+
+<ul>
+<li>2016.7.29：v1.1.0发布，新增队列驱动，缓存驱动移动至 <code>TargetLiu\PHPRedis\Cache</code> ，使用老版本的需要修改 <code>bootstrap/app.php</code> 中缓存驱动加载位置。</li>
+</ul>
+
+<p>[TargetLiu/PHPRedis]</p>
+
+<p><a href="https://github.com/TargetLiu/PHPRedis">https://github.com/TargetLiu/PHPRedis</a></p>
+
+<p><a href="https://packagist.org/packages/targetliu/phpredis">https://packagist.org/packages/targetliu/phpredis</a></p>
+
+<hr />
+
+<h2 id="编译安装phpredis">编译安装PhpRedis</h2>
+
+<p>由于 <code>PhpRedis</code> 是C语言写的模块，需要编译安装。安装方法网上一搜一大把，请根据自己的环境选择相应的方法安装即可。</p>
+
+<p>两个可能用得上的链接：</p>
+
+<p><a href="https://pecl.php.net/package/redis">PECL - PhpRedis</a></p>
+
+<p><a href="https://github.com/phpredis/phpredis">GitHub - PhpRedis</a></p>
+</section>
+                        <aside class="aside clearfix">
+                            <a class="btn btn-primary btn-lg pull-right" href="/2016/7/19/lumen-phpredis.html">继续阅读</a>
+                        </aside>
+                    </div>
+                </div>
+            </article>
+            
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">18</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/18/lumen-configure.html">Lumen配置文件按需加载出现的坑</a>
+                            </h3>
+                        </header>
+                        <section class="brief"><h2 id="问题描述">问题描述</h2>
+
+<p>公司一个高并发API需要从Laravel移植到Lumen，由于数据库配置信息是通过远程或者缓存读取后动态配置，所以在中间件时使用到了 <code>Config::set</code> 然而实际运行时发现数据库配置并没有更新。</p>
+
+<blockquote>
+<p>由于是从Laravel移植，因此保留了Facades的写法，Lumen中可以通过以下方法使用Facades:</p>
+
+<ul>
+<li>取消 <code>bootstarp/app.php</code> 中 <code>$app-&gt;withFacades();</code> 的注释</li>
+<li><code>use Illuminate\Support\Facades\XXX</code></li>
+</ul>
+</blockquote>
+
+<p>另一方面，系统使用 <code>Redis</code> 作为缓存，通过 <code>env</code> 配置 <code>Redis</code> ，配置信息存储在 <code>laravel/lumen-framework/config/database.php</code> 在没有使用数据库先使用缓存的情况下，报没有传配置项的错误。</p>
+</section>
+                        <aside class="aside clearfix">
+                            <a class="btn btn-primary btn-lg pull-right" href="/2016/7/18/lumen-configure.html">继续阅读</a>
+                        </aside>
+                    </div>
+                </div>
+            </article>
+            
+            <div class="article-pager text-center">
+                
+                
+            </div>
+        </div>
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

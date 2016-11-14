@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Lumen中注册使用Artisan Console - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="Lumen中注册使用Artisan Console"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="lumen-artisan-console">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">22</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/22/lumen-artisan-console.html">Lumen中注册使用Artisan Console</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/php.html">php</a>
+                            
+                            <a class="tag label label-info" href="/tags/Laravel%20and%20Lumen.html">Laravel and Lumen</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><p>Laravel中使用 <code>Artisan Console</code> 有详细的介绍。<a href="https://laravel.com/docs/5.2/artisan">Laravel Artisan Console 官方文档</a>，除了创建和注册 <code>Artisan Console</code> 与Lumen稍许不同外，其它内容基本都一样。</p>
+
+<p>但是实际项目中，我更希望用Lumen的 <code>Artisan Console</code> 来执行一些简单的数据迁移、版本升级等操作。</p>
+
+<p>下面就以<a href="https://laravel.com/docs/5.2/artisan">官方文档</a>中的示例来简单说一下Lumen中怎么注册使用 <code>Artisan Console</code></p>
+
+<!--more-->
+
+<h1 id="创建-artisan-console-命令文件">创建 <code>Artisan Console</code>命令文件</h1>
+
+<p>Lumen创建命令只能通过手动创建文件。
+在 <code>app/Console/Commands</code> 创建 <code>SendEmails</code> 用来编写命令：</p>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Console\Commands;
+
+use App\User;
+use App\DripEmailer;
+use Illuminate\Console\Command;
+
+class SendEmails extends Command{
+    /**
+     * 控制台命令名称
+     *
+     * @var string
+     */
+    protected $signature = 'email:send {user}';
+
+    /**
+     * 控制台命令描述
+     *
+     * @var string
+     */
+    protected $description = 'Send drip e-mails to a user';
+
+    /**
+     * The drip e-mail service.
+     *
+     * @var DripEmailer
+     */
+    protected $drip;
+
+    /**
+     * 创建新的命令实例
+     *
+     * @param  DripEmailer  $drip
+     * @return void
+     */
+    public function __construct(DripEmailer $drip)
+    {
+        parent::__construct();
+        $this-&gt;drip = $drip;
+    }
+
+    /**
+     * 执行控制台命令
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
+        $this-&gt;drip-&gt;send(User::find($this-&gt;argument('user')));
+    }
+}
+</code></pre>
+
+<p>命令编写具体方法请查看Laravel的<a href="https://laravel.com/docs/5.2/artisan">官方文档</a> ，Lumen是一样的。</p>
+
+<h1 id="注册命令">注册命令</h1>
+
+<p>Lumen与Laravel最主要的差异就在这里，Lumen需要自己写服务提供者来注册命令。
+在 <code>app/Providers</code> 里创建一个新的服务提供者：</p>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use App\Console\Commands\SendEmails;
+
+class SendEmailsServiceProvider extends ServiceProvider
+{
+    /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = true;
+
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this-&gt;app-&gt;singleton('command.email.send', function () {
+            return new SendEmails;
+        });
+
+        $this-&gt;commands('command.email.send');
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return ['command.email.send'];
+    }
+}
+
+</code></pre>
+
+<p>在 <code>bootstrap/app.php</code> 中注册服务提供者：</p>
+<pre><code class="language-php">$app-&gt;register(App\Providers\ SendEmailsServiceProvider::class);
+</code></pre>
+
+<p>现在就大功告成，只需要执行 <code>php artisan email:send XXX</code> 就可以使用自己编写的命令了。</p>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="lumen-artisan-console" data-title="Lumen中注册使用Artisan Console - TargetLiu" data-url="http://127.0.0.1:9899/2016/7/22/lumen-artisan-console.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

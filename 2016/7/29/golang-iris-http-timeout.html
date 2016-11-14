@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Golang - iris中通过Plugin设置http超时时间（更新：作者已经提供相关设置） - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="Golang - iris中通过Plugin设置http超时时间（更新：作者已经提供相关设置）"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="golang-iris-http-timeout">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">29</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/29/golang-iris-http-timeout.html">Golang - iris中通过Plugin设置http超时时间（更新：作者已经提供相关设置）</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/golang.html">golang</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><blockquote>
+<p><a href="https://github.com/kataras/iris">kataras/iris</a>是一款基于<a href="https://github.com/valyala/fasthttp">valyala/fasthttp</a>的web开发框架。注重效率，在<a href="https://github.com/smallnest/go-web-framework-benchmark">Benchmarks</a>对比中也表现出了速度的优势。</p>
+</blockquote>
+
+<h2 id="更新作者提供的相关设置选项">更新作者提供的相关设置选项</h2>
+
+<p>根据留言和 <code>iris</code> 最新的<a href="https://github.com/kataras/iris/commit/3c50d26808461e8f28b66e99bb6511a875e8cfb5">提交(3c50d26)</a>，现在只需要使用ListenTo并且配置相关选项既可以设置超时时间（需要 <code>go get -u</code> 升级 <code>iris</code> 到最新版本）：</p>
+<pre><code class="language-go">iris.ListenTo(config.Server{WriteTimeout: 5* time.Second, ReadTimeout=
+5*time.Second, ListeningAddr:&quot;:8080&quot;})
+</code></pre>
+
+<!--more-->
+
+<h2 id="通过plugin设置超时时间">通过Plugin设置超时时间</h2>
+
+<p>最近学习GOLANG时阅读到<a href="http://colobu.com/2016/07/01/the-complete-guide-to-golang-net-http-timeouts/">Go net/http 超时机制完全手册</a>，GO自带的 <code>net/http</code> 中可以使用</p>
+<pre><code class="language-go">srv := &amp;http.Server{  
+    ReadTimeout: 5 * time.Second,
+    WriteTimeout: 10 * time.Second,
+}
+</code></pre>
+
+<p>来设置超时时间。</p>
+
+<p>同样的，在 <code>valyala/fasthttp</code> 中也可以使用</p>
+<pre><code class="language-go">srv := &amp;fasthttp.Server{  
+    ReadTimeout: 5 * time.Second,
+    WriteTimeout: 10 * time.Second,
+}
+</code></pre>
+
+<p>进行设置。</p>
+
+<p>不过在iris中，虽然 <code>iris.Server</code> 是嵌入了 <code>fasthttp.Server</code> 不过iris在 <code>Listen</code> 之前是没有创建的，没法设置超时时间。
+阅读iris文档和代码后发现，为给iris中的 <code>fasthttp.Server</code> 也设置超时时间，可以通过 <a href="https://kataras.gitbooks.io/iris/content/plugins.html">iris Plugins</a> 机制进行设置。</p>
+
+<p>iris的Plugins类似于钩子、事物监听、中间件，可以在特定的情况下触发事件。我们只用在Listen之前设置超时即可达到目的了。</p>
+<pre><code class="language-go">app.Plugins.PreListen(func(s *iris.Framework) {
+    s.Servers.Main().ReadTimeout = 5 * time.Second
+    s.Servers.Main().WriteTimeout = 5 * time.Second
+})
+</code></pre>
+
+<p>同理，在其它无论是基于 <code>net/http</code> 还是 <code>valyala/fasthttp</code> 的框架中都可以看看Server具体是在什么时候创建以及有没有可能通过在Listen之前触发的事件来设置超时时间。</p>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="golang-iris-http-timeout" data-title="Golang - iris中通过Plugin设置http超时时间（更新：作者已经提供相关设置） - TargetLiu" data-url="http://127.0.0.1:9899/2016/7/29/golang-iris-http-timeout.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

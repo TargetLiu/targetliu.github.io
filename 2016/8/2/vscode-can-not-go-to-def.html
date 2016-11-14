@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>VSCODE中godef无法跳转到定义的问题 - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="VSCODE中godef无法跳转到定义的问题"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="vscode-can-not-go-to-def">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">8</span>
+                            <span class="day">2</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/8/2/vscode-can-not-go-to-def.html">VSCODE中godef无法跳转到定义的问题</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/golang.html">golang</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><blockquote>
+<p>之前研究GOLANG时一直用LiteIDE，不得不说，LiteIDE的确不错，但是总感觉缺乏美感，是一款很中规中矩的编辑器。网上看到大家对VSCODE评价不错，尝试后发现的确不错，布局简洁、插件化、支持中文，通过VSCODE GO扩展能够很舒服的写GO的代码。</p>
+</blockquote>
+
+<h2 id="问题描述">问题描述</h2>
+
+<p>不过在实际使用过程中发现 <code>net</code> 包无法正常跳转到定义，如下段代码 <code>ResolveTCPAddr</code>就无法正常跳转</p>
+<pre><code class="language-go">package main
+
+import (
+    &quot;net&quot;
+)
+
+func main() {
+    _, err := net.ResolveTCPAddr(&quot;tcp&quot;, &quot;:4040&quot;)
+}
+</code></pre>
+
+<!--more-->
+
+<p>由于VSCODE GO中跳转到定义使用的是godef，遂通过godef的debug模式查看问题原因：</p>
+<pre><code>godef -debug -f main.go net.ResolveTCPAddr
+</code></pre>
+
+<p>运行结果如下：</p>
+<pre><code>2016/08/02 01:17:30 exprType tuple:false pkg: *ast.SelectorExpr net.ListenTCP [
+2016/08/02 01:17:30 exprType tuple:false pkg: *ast.Ident net [
+2016/08/02 01:17:30 exprType tuple:false pkg: *ast.ImportSpec &quot;net&quot; [
+2016/08/02 01:17:30 ] -&gt; 0x0, Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;}
+2016/08/02 01:17:30 ] -&gt; 0xc820157860, Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;}
+2016/08/02 01:17:30 member Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;} 'ListenTCP' {
+2016/08/02 01:17:30     /usr/local/go/src/net/cgo_android.go:10:8: cannot find identifier for package &quot;C&quot;: cannot find package &quot;C&quot; in any of:
+    /usr/local/go/src/vendor/C (vendor tree)
+    /usr/local/go/src/C (from $GOROOT)
+    /Users/targetliu/dev/govendor/src/C (from $GOPATH)
+    /Users/targetliu/dev/golang/src/C
+2016/08/02 01:17:30 } -&gt; &lt;nil&gt;
+2016/08/02 01:17:30 ] -&gt; 0x0, Type{bad &quot;&quot; &lt;nil&gt; }
+2016/08/02 01:17:30 exprType tuple:false pkg: *ast.SelectorExpr net.ListenTCP [
+2016/08/02 01:17:30 exprType tuple:false pkg: *ast.Ident net [
+2016/08/02 01:17:30 exprType tuple:false pkg: *ast.ImportSpec &quot;net&quot; [
+2016/08/02 01:17:30 ] -&gt; 0x0, Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;}
+2016/08/02 01:17:30 ] -&gt; 0xc820157860, Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;}
+2016/08/02 01:17:30 member Type{package &quot;&quot; *ast.ImportSpec &quot;net&quot;} 'ListenTCP' {
+2016/08/02 01:17:30     /usr/local/go/src/net/cgo_android.go:10:8: cannot find identifier for package &quot;C&quot;: cannot find package &quot;C&quot; in any of:
+    /usr/local/go/src/vendor/C (vendor tree)
+    /usr/local/go/src/C (from $GOROOT)
+    /Users/targetliu/dev/govendor/src/C (from $GOPATH)
+    /Users/targetliu/dev/golang/src/C
+2016/08/02 01:17:30 } -&gt; &lt;nil&gt;
+2016/08/02 01:17:30 ] -&gt; 0x0, Type{bad &quot;&quot; &lt;nil&gt; }
+godef: no declaration found for net.ListenTCP
+</code></pre>
+
+<p>注意到这一句:</p>
+<pre><code>cannot find identifier for package &quot;C&quot;: cannot find package &quot;C&quot; in any of:
+</code></pre>
+
+<p>原来是 <code>net</code> 包里 <code>import C</code> ，然而C并不是一个具体真实存在的包，所以godef无法进行分析，导致找不到定义。</p>
+
+<p>godef的GitHub上作者也发现了同样的问题：<a href="https://github.com/rogpeppe/godef/issues/41">Issue:net.LookupIP fails #41</a></p>
+
+<h2 id="解决方案">解决方案</h2>
+
+<p>在godef的GitHub上看到有人提交了针对这个问题的解决方案：<a href="https://github.com/rogpeppe/godef/pull/44">[master] Special treatment for &ldquo;C&rdquo; package. #44</a></p>
+
+<p>根据这个提交，可以尝试使用如下方法解决：</p>
+
+<ul>
+<li><p>找到并打开godef的 <code>go/parser/parser.go</code> 这个文件</p></li>
+
+<li><p>在 <code>1970行</code> 左右添加(代码中+号部分，可以通过搜索定位)：</p></li>
+</ul>
+<pre><code>if declIdent == nil {
+              filename := p.fset.Position(path.Pos()).Filename
+              name, err := p.pathToName(litToString(path), filepath.Dir(filename))
+ +            if litToString(path) == &quot;C&quot; {
+ +                name = &quot;C&quot;
+ +            }
+              if name == &quot;&quot; {
+                  p.error(path.Pos(), fmt.Sprintf(&quot;cannot find identifier for package %q: %v&quot;, litToString(path), err))
+              } else {
+</code></pre>
+
+<ul>
+<li>重新编译godef</li>
+</ul>
+
+<p>如果遇到同样问题的同学不妨试一试以上方式，至少对于我来说，问题得到了解决。</p>
+
+<p>也希望作者能尽快修复这个问题。</p>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="vscode-can-not-go-to-def" data-title="VSCODE中godef无法跳转到定义的问题 - TargetLiu" data-url="http://127.0.0.1:9899/2016/8/2/vscode-can-not-go-to-def.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Lumen配置文件按需加载出现的坑 - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="Lumen配置文件按需加载出现的坑"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="lumen-configure">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">18</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/18/lumen-configure.html">Lumen配置文件按需加载出现的坑</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/php.html">php</a>
+                            
+                            <a class="tag label label-info" href="/tags/Laravel%20and%20Lumen.html">Laravel and Lumen</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><h2 id="问题描述">问题描述</h2>
+
+<p>公司一个高并发API需要从Laravel移植到Lumen，由于数据库配置信息是通过远程或者缓存读取后动态配置，所以在中间件时使用到了 <code>Config::set</code> 然而实际运行时发现数据库配置并没有更新。</p>
+
+<blockquote>
+<p>由于是从Laravel移植，因此保留了Facades的写法，Lumen中可以通过以下方法使用Facades:</p>
+
+<ul>
+<li>取消 <code>bootstarp/app.php</code> 中 <code>$app-&gt;withFacades();</code> 的注释</li>
+<li><code>use Illuminate\Support\Facades\XXX</code></li>
+</ul>
+</blockquote>
+
+<p>另一方面，系统使用 <code>Redis</code> 作为缓存，通过 <code>env</code> 配置 <code>Redis</code> ，配置信息存储在 <code>laravel/lumen-framework/config/database.php</code> 在没有使用数据库先使用缓存的情况下，报没有传配置项的错误。</p>
+
+<!--more-->
+
+<h2 id="问题分析">问题分析</h2>
+
+<p>通过阅读源码 <code>laravel/lumen-framework/src/Application.php</code> 发现，Lumen中的服务都是按需绑定并加载。先来看看 <code>make()</code> 的代码：</p>
+<pre><code class="language-php">public function make($abstract, array $parameters = [])
+{
+    $abstract = $this-&gt;getAlias($this-&gt;normalize($abstract));
+
+    if (array_key_exists($abstract, $this-&gt;availableBindings) &amp;&amp;
+        ! array_key_exists($this-&gt;availableBindings[$abstract], $this-&gt;ranServiceBinders)) {
+        $this-&gt;{$method = $this-&gt;availableBindings[$abstract]}();
+
+        $this-&gt;ranServiceBinders[$method] = true;
+    }
+
+    return parent::make($abstract, $parameters);
+}
+</code></pre>
+
+<p>Lumen通过数组 <code>$availableBindings</code> 实现了基本服务的按需绑定并加载。在服务按需绑定并加载的时候，使用了类似组件的形式通过 <code>loadComponent()</code> 载入配置项并绑定服务。再来看看 <code>loadComponent()</code> 的代码：</p>
+<pre><code class="language-php">public function loadComponent($config, $providers, $return = null)
+{
+    $this-&gt;configure($config);
+
+    foreach ((array) $providers as $provider) {
+        $this-&gt;register($provider);
+    }
+
+    return $this-&gt;make($return ?: $config);
+}
+</code></pre>
+
+<p>如此就释然为什么在中间件以及使用 <code>DB</code> 之前想要动态配置数据库的信息时无法正确的写入配置项了。因为在这个时候 <code>DB</code> 的相关配置文件还没有被载入。你先写入了配置项当使用 <code>DB</code> 的时候会再次载入配置文件中的配置项覆盖动态写入的内容。</p>
+
+<p>同理，使用 <code>Redis</code> 时，由于 <code>Redis</code> 相关配置是写在 <code>database.php</code> 里的，仅仅通过 <code>$app-&gt;register(Illuminate\Redis\RedisServiceProvider::class);</code> 注册是无法获取到配置项，如果在使用 <code>Redis</code> 时之前没有使用 <code>DB</code> 就会报没有传配置项的错误。</p>
+
+<h2 id="解决方案">解决方案</h2>
+
+<p>既然找到了问题所在，要解决起来也是很方便的。只要在修改、使用配置项之前先载入配置文件就可以解决这些问题。比如:</p>
+
+<ul>
+<li>使用 <code>app()-&gt;configure('database');</code> 载入所需要的配置文件</li>
+<li>在注册绑定服务到服务容器的时候使用 <code>loadComponent</code> 进行注册绑定</li>
+</ul>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="lumen-configure" data-title="Lumen配置文件按需加载出现的坑 - TargetLiu" data-url="http://127.0.0.1:9899/2016/7/18/lumen-configure.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

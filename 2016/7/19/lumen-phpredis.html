@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Lumen中使用速度更快的PhpRedis扩展（更新队列驱动） - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="Lumen中使用速度更快的PhpRedis扩展（更新队列驱动）"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="lumen-phpredis">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">7</span>
+                            <span class="day">19</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/7/19/lumen-phpredis.html">Lumen中使用速度更快的PhpRedis扩展（更新队列驱动）</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/php.html">php</a>
+                            
+                            <a class="tag label label-info" href="/tags/Laravel%20and%20Lumen.html">Laravel and Lumen</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><blockquote>
+<p>Lumen的确是一款适合做API，速度很快的框架。但是在项目中使用Redis时发现Lumen默认使用的 <code>predis/predis</code> 会拖慢整体速度，特别是在高并发的情况下，所以寻思着使用 <code>PhpRedis</code> 代替，毕竟 <code>PhpRedis</code> 是C语言写的模块，性能上肯定优于 <code>predis</code></p>
+</blockquote>
+
+<p>文中例子已经整理成一个 <code>composer</code> 包，文末有简单介绍。</p>
+
+<h2 id="phpredis-for-lumen-5">PhpRedis for Lumen 5.*</h2>
+
+<ul>
+<li>2016.7.29：v1.1.0发布，新增队列驱动，缓存驱动移动至 <code>TargetLiu\PHPRedis\Cache</code> ，使用老版本的需要修改 <code>bootstrap/app.php</code> 中缓存驱动加载位置。</li>
+</ul>
+
+<p>[TargetLiu/PHPRedis]</p>
+
+<p><a href="https://github.com/TargetLiu/PHPRedis">https://github.com/TargetLiu/PHPRedis</a></p>
+
+<p><a href="https://packagist.org/packages/targetliu/phpredis">https://packagist.org/packages/targetliu/phpredis</a></p>
+
+<hr />
+
+<h2 id="编译安装phpredis">编译安装PhpRedis</h2>
+
+<p>由于 <code>PhpRedis</code> 是C语言写的模块，需要编译安装。安装方法网上一搜一大把，请根据自己的环境选择相应的方法安装即可。</p>
+
+<p>两个可能用得上的链接：</p>
+
+<p><a href="https://pecl.php.net/package/redis">PECL - PhpRedis</a></p>
+
+<p><a href="https://github.com/phpredis/phpredis">GitHub - PhpRedis</a></p>
+
+<!--more-->
+
+<h2 id="lumen中使用phpredis">Lumen中使用PhpRedis</h2>
+
+<p>很简单，只需要在 <code>bootstrap/app.php</code> 中添加下列代码将PhpRedis注入容器即可：</p>
+<pre><code class="language-php">$app-&gt;singleton('phpredis', function(){
+    $redis = new Redis;
+    $redis-&gt;pconnect('127.0.0.1'); //建立连接
+        $redis-&gt;select(1); //选择库
+        $redis-&gt;auth('xxxx'); //认证
+    return $redis;
+});
+unset($app-&gt;availableBindings['redis']);
+</code></pre>
+
+<p>绑定后即可通过 <code>app('phpredis')</code> 直接使用 <code>PhpRedis</code> 了，具体使用方法可以看相应的官方文档。</p>
+
+<h2 id="lumen中为phpredis增加cache驱动">Lumen中为PhpRedis增加Cache驱动</h2>
+
+<p>由于实际使用中更多的将Redis用于缓存，Lumen自带的Redis缓存驱动是基于 <code>predis/predis</code> 实现，我们现在新建一个驱动以支持 <code>Phpredis</code></p>
+
+<p>新增Cache驱动详细方法可以查看 <a href="https://laravel.com/docs/5.2/cache#adding-custom-cache-drivers">官方文档</a>，这里指罗列一些关键的点。更多的内容也可以查看 <a href="https://github.com/TargetLiu/PHPRedis">TargetLiu/PHPRedis</a></p>
+
+<p>我们首先创建一个 <code>ServiceProvider</code> ：</p>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\ServiceProvider;
+use TargetLiu\PHPRedis\PHPRedisStore;
+
+class CacheServiceProvider extends ServiceProvider
+{
+    /**
+     * Perform post-registration booting of services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        Cache::extend('phpredis', function ($app) {
+            return Cache::repository(new PHPRedisStore($app-&gt;make('phpredis'), $app-&gt;config['cache.prefix']));
+        });
+    }
+
+    /**
+     * Register bindings in the container.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
+}
+</code></pre>
+
+<p>这样就建立一个名为 <code>phpreids</code> 的驱动。再创建一个基于 <code>Illuminate\Contracts\Cache\Store</code> 契约的缓存操作类用以操作 <code>PhpRedis</code></p>
+<pre><code class="language-php">&lt;?php
+
+namespace TargetLiu\PHPRedis;
+
+use Illuminate\Contracts\Cache\Store;
+
+class PHPRedisStore implements Store
+{
+
+    /**
+     * The Redis database connection.
+     *
+     * @var \Illuminate\Redis\Database
+     */
+    protected $redis;
+
+    /**
+     * A string that should be prepended to keys.
+     *
+     * @var string
+     */
+    protected $prefix;
+
+    /**
+     * Create a new Redis store.
+     *
+     * @param  \Illuminate\Redis\Database  $redis
+     * @param  string  $prefix
+     * @return void
+     */
+    public function __construct($redis, $prefix = '')
+    {
+        $this-&gt;redis = $redis;
+        $this-&gt;setPrefix($prefix);
+    }
+
+    /**
+     * Retrieve an item from the cache by key.
+     *
+     * @param  string|array  $key
+     * @return mixed
+     */
+    public function get($key)
+    {
+        if (!is_null($value = $this-&gt;connection()-&gt;get($this-&gt;prefix . $key))) {
+            return is_numeric($value) ? $value : unserialize($value);
+        }
+    }
+
+    /**
+     * Retrieve multiple items from the cache by key.
+     *
+     * Items not found in the cache will have a null value.
+     *
+     * @param  array  $keys
+     * @return array
+     */
+    public function many(array $keys)
+    {
+        $return = [];
+
+        $prefixedKeys = array_map(function ($key) {
+            return $this-&gt;prefix . $key;
+        }, $keys);
+
+        $values = $this-&gt;connection()-&gt;mGet($prefixedKeys);
+
+        foreach ($values as $index =&gt; $value) {
+            $return[$keys[$index]] = is_numeric($value) ? $value : unserialize($value);
+        }
+
+        return $return;
+    }
+
+    /**
+     * Store an item in the cache for a given number of minutes.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @param  int     $minutes
+     * @return void
+     */
+    public function put($key, $value, $minutes)
+    {
+        $value = is_numeric($value) ? $value : serialize($value);
+
+        $this-&gt;connection()-&gt;set($this-&gt;prefix . $key, $value, (int) max(1, $minutes * 60));
+    }
+
+    /**
+     * Store multiple items in the cache for a given number of minutes.
+     *
+     * @param  array  $values
+     * @param  int  $minutes
+     * @return void
+     */
+    public function putMany(array $values, $minutes)
+    {
+        foreach ($values as $key =&gt; $value) {
+            $this-&gt;put($key, $value, $minutes);
+        }
+    }
+
+    /**
+     * Increment the value of an item in the cache.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return int|bool
+     */
+    public function increment($key, $value = 1)
+    {
+        return $this-&gt;connection()-&gt;incrBy($this-&gt;prefix . $key, $value);
+    }
+
+    /**
+     * Decrement the value of an item in the cache.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return int|bool
+     */
+    public function decrement($key, $value = 1)
+    {
+        return $this-&gt;connection()-&gt;decrBy($this-&gt;prefix . $key, $value);
+    }
+
+    /**
+     * Store an item in the cache indefinitely.
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return void
+     */
+    public function forever($key, $value)
+    {
+        $value = is_numeric($value) ? $value : serialize($value);
+
+        $this-&gt;connection()-&gt;set($this-&gt;prefix . $key, $value);
+    }
+
+    /**
+     * Remove an item from the cache.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function forget($key)
+    {
+        return (bool) $this-&gt;connection()-&gt;delete($this-&gt;prefix . $key);
+    }
+
+    /**
+     * Remove all items from the cache.
+     *
+     * @return void
+     */
+    public function flush()
+    {
+        $this-&gt;connection()-&gt;flushDb();
+    }
+
+    /**
+     * Get the Redis connection instance.
+     *
+     * @return \Predis\ClientInterface
+     */
+    public function connection()
+    {
+        return $this-&gt;redis;
+    }
+
+    /**
+     * Get the Redis database instance.
+     *
+     * @return \Illuminate\Redis\Database
+     */
+    public function getRedis()
+    {
+        return $this-&gt;redis;
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    public function getPrefix()
+    {
+        return $this-&gt;prefix;
+    }
+
+    /**
+     * Set the cache key prefix.
+     *
+     * @param  string  $prefix
+     * @return void
+     */
+    public function setPrefix($prefix)
+    {
+        $this-&gt;prefix = !empty($prefix) ? $prefix . ':' : '';
+    }
+}
+</code></pre>
+
+<p>通过以上两个步骤基本上就完成了Cache驱动的创建，现在只需要在 <code>bootstrap/app.php</code> 中注入新建的Cache驱动然后配置 <code>.env</code> 中 <code>CACHE_DRIVER = phpredis</code> ，最后再在 <code>config/cache.php</code> 中加入相应的驱动代码即可</p>
+<pre><code class="language-php">'phpredis' =&gt; [
+    'driver' =&gt; 'phpredis'
+],
+</code></pre>
+
+<p>Cache的使用请查看Lumen<a href="https://lumen.laravel.com/docs/5.2/cache">官方文档</a></p>
+
+<h2 id="一个基于phpredis的lumen扩展包">一个基于PhpRedis的Lumen扩展包</h2>
+
+<p>[TargetLiu/PHPRedis]</p>
+
+<p><a href="https://github.com/TargetLiu/PHPRedis">https://github.com/TargetLiu/PHPRedis</a></p>
+
+<p><a href="https://packagist.org/packages/targetliu/phpredis">https://packagist.org/packages/targetliu/phpredis</a></p>
+
+<p>安装：<code>composer require targetliu/phpredis</code></p>
+
+<p>安装及使用方法请看 <a href="https://github.com/TargetLiu/PHPRedis#phpredis-for-lumen-5">README</a></p>
+
+<p>这个包只是我做的一个简单示例，引入了 <code>PhpRedis</code> 并做了最简单的缓存驱动。目前支持根据 <code>.env</code> 获取Redis配置、Cache的基本读写等。</p>
+
+<p>Session和Queue可以继续使用Lumen自带的Redis驱动，两者互不影响。下一步如有需要可以继续完善这两部分的驱动。</p>
+
+<p>这个包将根据自己工作需求以及大家的已经进一步完善。</p>
+
+<p>欢迎大家提出意见共同完善。</p>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="lumen-phpredis" data-title="Lumen中使用速度更快的PhpRedis扩展（更新队列驱动） - TargetLiu" data-url="http://127.0.0.1:9899/2016/7/19/lumen-phpredis.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

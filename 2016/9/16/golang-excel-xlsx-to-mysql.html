@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>开源一个Golang写的Excel(xlsx)导入MySQL小工具 - TargetLiu</title>
+    <meta name="keywords" content="target,targetliu,TargetLiu,php,laravel,lumen,golang"/>
+    <meta name="description" content="开源一个Golang写的Excel(xlsx)导入MySQL小工具"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/css/prism.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="post" data-perma="golang-excel-xlsx-to-mysql">
+<header id="header">
+    <div class="container">
+        <div class="header clearfix">
+            <nav id="site-nav">
+                <ul class="nav nav-inverse nav-pills pull-right">
+                    <li role="presentation" class="">
+                        <a href="/" >首页
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/archive.html" >归档
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="/about.html" >关于
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
+        </div>
+    </div>
+</header>
+
+<section id="main">
+    <div class="container">
+        <div id="article-single">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">9</span>
+                            <span class="day">16</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2016/9/16/golang-excel-xlsx-to-mysql.html">开源一个Golang写的Excel(xlsx)导入MySQL小工具</a>
+                            </h3>
+                        </header>
+                        <aside class="aside clearfix">
+                            
+                            <a class="tag label label-info" href="/tags/golang.html">golang</a>
+                            
+                            
+                            <a class="stat label label-default pull-right" href="http://targetliu.com" target="_blank">TargetLiu</a>
+                        </aside>
+                        <section class="brief"><h2 id="简介">简介</h2>
+
+<p>这是工作中用到的一个小工具，将Excel(xlsx)表导入MySQL表中，用Golang写的，每条记录单独一条 <code>goroutine</code> 处理，提高效率。支持随机数生成、密码生成、时间戳；支持关联查询、附表操作等。</p>
+
+<h2 id="使用方法">使用方法</h2>
+
+<ol>
+<li><p>使用Go编译安装或直接下载：<a href="https://github.com/TargetLiu/xlsxtomysql/releases">https://github.com/TargetLiu/xlsxtomysql/releases</a></p></li>
+
+<li><p>使用命令： <code>xlsxtomysql [DSN] [数据表名称] [*.xlsx]</code></p></li>
+</ol>
+
+<!--more-->
+
+<h2 id="dsn">DSN</h2>
+
+<p>格式：</p>
+<pre><code>[username[:password]@][protocol[(address)]]/dbname[?param1=value1&amp;...&amp;paramN=valueN]
+</code></pre>
+
+<p>示例：</p>
+<pre><code>root:123@tcp(127.0.0.1:3306)/dbname
+</code></pre>
+
+<p>注意：
+Linux、Mac下可能需要输入 <code>\( \)</code></p>
+
+<h2 id="excel表导入结构说明">Excel表导入结构说明</h2>
+
+<ol>
+<li><p>只支持单Sheet</p></li>
+
+<li><p>第一行对应数据库表字段</p>
+
+<ul>
+<li><p>通过 <code>|</code> 分割</p></li>
+
+<li><p><code>字段名|unique</code> 判断重复，重复的自动跳过</p></li>
+
+<li><p><code>字段名|password|[md5|bcrypt]</code> 密码生成，第二个参数[md5|bcrypt]</p></li>
+
+<li><p><code>字段名|find|表名|需要获取的字段|查询字段</code> 根据内容从其它表查询并获取字段，格式 <code>SELECT 需要获取的字段 FROM 表名 WHERE 查询字段 = 内容</code></p></li>
+
+<li><p><code>:other</code> 附表操作</p></li>
+</ul></li>
+
+<li><p>内容行</p>
+
+<ul>
+<li><p><code>:random</code> 生成随机字符串</p></li>
+
+<li><p><code>:time</code> 当前unix时间戳</p></li>
+
+<li><p><code>:null</code>  空值，自动跳过该值，一般可用于自增id</p></li>
+
+<li><p>如果该列为 <code>password</code> ，内容为[明文密码]或[明文密码|盐]，盐可以通过[:字段名]获取之前的字段名。密码将自动根据字段名中填写的加密方式进行加密</p></li>
+
+<li><p>如果该列为 <code>other</code> , 格式[表名|字段1|字段2|字段3&hellip;.] 其它表需要按顺序为每个字段添加内容。字段可以为[:null|:id(主表生成的自增ID)|:random|:time]</p></li>
+</ul></li>
+</ol>
+
+<h2 id="excel截图">Excel截图</h2>
+
+<p><img src="https://github.com/TargetLiu/xlsxtomysql/raw/master/screenshot.jpg" alt="Excel截图" /></p>
+
+<h2 id="github">GitHub</h2>
+
+<p><a href="https://github.com/TargetLiu/xlsxtomysql">https://github.com/TargetLiu/xlsxtomysql</a></p>
+</section>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+<section id="comment">
+    
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="ds-thread" data-thread-key="golang-excel-xlsx-to-mysql" data-title="开源一个Golang写的Excel(xlsx)导入MySQL小工具 - TargetLiu" data-url="http://127.0.0.1:9899/2016/9/16/golang-excel-xlsx-to-mysql.html"></div>
+            <script type="text/javascript">
+                var duoshuoQuery = {short_name:"targetliu"};
+                (function() {
+                    var ds = document.createElement('script');
+                    ds.type = 'text/javascript';ds.async = true;
+                    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                    ds.charset = 'UTF-8';
+                    (document.getElementsByTagName('head')[0]
+                    || document.getElementsByTagName('body')[0]).appendChild(ds);
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+    </div>
+</section>
+<footer id="footer">
+    <div class="container text-center">
+        <p>© 2015 TargetLiu.
+            <a href="http://creativecommons.org/licenses/by/3.0/">Some rights reserved </a> |
+            <a href="/feed.xml">Feed</a> |
+            <a href="/sitemap.xml">Sitemap</a>
+        </p>
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        </p>
+        
+    
+    
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?7c23b90cc9b96f4c9bc060ad11086ec1";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+    
+
+    </div>
+</footer>
+<script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/prism.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("pre code").addClass("line-numbers")
+    });
+</script>
+</body>
+</html>

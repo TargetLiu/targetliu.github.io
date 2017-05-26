@@ -14,8 +14,11 @@
 <header id="header">
     <div class="container">
         <div class="header clearfix">
+            <h3 id="site-title">
+                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
+            </h3>
             <nav id="site-nav">
-                <ul class="nav nav-inverse nav-pills pull-right">
+                <ul class="nav nav-inverse nav-pills">
                     <li role="presentation" class="active">
                         <a href="/" >首页
                         </a>
@@ -30,9 +33,6 @@
                     </li>
                 </ul>
             </nav>
-            <h3 id="site-title">
-                <a href="/">TargetLiu <sup>吃土的码农</sup></a>
-            </h3>
         </div>
     </div>
 </header>
@@ -40,6 +40,51 @@
 <section id="main">
     <div class="container">
         <div id="article-list">
+            <article class="article">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1 panel panel-default">
+                        <header class="header">
+                            <div class="meta">
+                        <span class="date">
+                            <span class="month">5</span>
+                            <span class="day">26</span>
+                        </span>
+                            </div>
+                            <h3 class="title">
+                                <a href="/2017/5/26/golang-WaitGroup-context-ticker-timeout.html">Golang中WaitGroup、Context、goroutine定时器及超时学习笔记</a>
+                            </h3>
+                        </header>
+                        <section class="brief"><blockquote>
+<p>好久没有发过文章了 - -||，今天发一篇 <code>golang</code> 中 <code>goroutine</code> 相关的学习笔记吧，以示例为主。</p>
+</blockquote>
+
+<h2 id="waitgroup">WaitGroup</h2>
+
+<p><code>WaitGroup</code> 在 <code>sync</code> 包中，用于阻塞主线程执行直到添加的 <code>goroutine</code> 全部执行完毕。</p>
+
+<h2 id="context">Context</h2>
+
+<p><code>Context</code> 是在 <code>Go1.7</code> 中移入标准库的。</p>
+
+<blockquote>
+<p><code>Context</code> 包不仅实现了在程序单元之间共享状态变量的方法，同时能通过简单的方法，使我们在被调用程序单元的外部，通过设置ctx变量值，将过期或撤销这些信号传递给被调用的程序单元。</p>
+</blockquote>
+
+<h2 id="goroutine的定时器及超时">goroutine的定时器及超时</h2>
+
+<p>这是两个有趣又实用的功能，在标准库 <code>time</code> 包里提供。</p>
+
+<h2 id="示例">示例</h2>
+
+<h3 id="源码">源码</h3>
+</section>
+                        <aside class="aside clearfix">
+                            <a class="btn btn-primary btn-lg pull-right" href="/2017/5/26/golang-WaitGroup-context-ticker-timeout.html">继续阅读</a>
+                        </aside>
+                    </div>
+                </div>
+            </article>
+            
             <article class="article">
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1 panel panel-default">
@@ -154,45 +199,6 @@ http.ListenAndServe(&quot;:8080&quot;, nil)
                 </div>
             </article>
             
-            <article class="article">
-                <div class="row">
-                    <div class="col-md-10 col-md-offset-1 panel panel-default">
-                        <header class="header">
-                            <div class="meta">
-                        <span class="date">
-                            <span class="month">8</span>
-                            <span class="day">2</span>
-                        </span>
-                            </div>
-                            <h3 class="title">
-                                <a href="/2016/8/2/vscode-can-not-go-to-def.html">VSCODE中godef无法跳转到定义的问题</a>
-                            </h3>
-                        </header>
-                        <section class="brief"><blockquote>
-<p>之前研究GOLANG时一直用LiteIDE，不得不说，LiteIDE的确不错，但是总感觉缺乏美感，是一款很中规中矩的编辑器。网上看到大家对VSCODE评价不错，尝试后发现的确不错，布局简洁、插件化、支持中文，通过VSCODE GO扩展能够很舒服的写GO的代码。</p>
-</blockquote>
-
-<h2 id="问题描述">问题描述</h2>
-
-<p>不过在实际使用过程中发现 <code>net</code> 包无法正常跳转到定义，如下段代码 <code>ResolveTCPAddr</code>就无法正常跳转</p>
-<pre><code class="language-go">package main
-
-import (
-    &quot;net&quot;
-)
-
-func main() {
-    _, err := net.ResolveTCPAddr(&quot;tcp&quot;, &quot;:4040&quot;)
-}
-</code></pre>
-</section>
-                        <aside class="aside clearfix">
-                            <a class="btn btn-primary btn-lg pull-right" href="/2016/8/2/vscode-can-not-go-to-def.html">继续阅读</a>
-                        </aside>
-                    </div>
-                </div>
-            </article>
-            
             <div class="article-pager text-center">
                 
                 <a class="btn btn-lg btn-info" href="/posts/2.html">以前的</a>
@@ -207,7 +213,7 @@ func main() {
             <a href="/feed.xml">Feed</a> |
             <a href="/sitemap.xml">Sitemap</a>
         </p>
-        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.5 (beta)</a>. Theme by Default.
+        <p>Powered by <a href="https://github.com/go-xiaohei/pugo">PuGo 0.10.10 (beta)</a>. Theme by Default.
         </p>
         
     
